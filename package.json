@@ -1,0 +1,16 @@
+{
+  "name": "wupnp2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "knex": "^0.8.6",
+    "sqlite3": "^3.0.8",
+    "mediaWatcher": "git://github.com/badfortrains/mediaWatcher"
+  }
+}
