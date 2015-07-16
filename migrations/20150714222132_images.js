@@ -5,9 +5,8 @@ exports.up = function(knex, Promise) {
       if (!exists) {
         return knex.schema.createTable('artist_map', function(t) {
           t.increments('id').primary();
-          t.string('artist', 100).index();
-          t.string('mbid',100).index();
-          t.string('fmid',100).index();
+          t.string('artist', 100).unique().index();
+          t.string('mbid',100).unique().index();
         });
       }
     }),
@@ -19,6 +18,8 @@ exports.up = function(knex, Promise) {
           t.string('album',100)
           t.string('mbid',100).index();
           t.string('fmid',100).index();
+          t.boolean("last_fm").defaultTo(false)
+          t.boolean("music_brainz").defaultTo(false)
 
           knex.schema.raw("CREATE INDEX album_artist ON album_map(artist,album)")
         });
@@ -35,6 +36,17 @@ exports.up = function(knex, Promise) {
         });
       }
     }),
+    knex.schema.hasTable('artist_images').then(function(exists) {
+      if (!exists) {
+        return knex.schema.createTable('artist_images', function(t) {
+          t.increments('id').primary();
+          t.integer('artist_id').references('id').inTable('artist_map')
+          t.string('mbid', 100).index();
+          t.string('size', 100);
+          t.string("url",100);
+        });
+      }
+    }),
   ]);
 };
 
@@ -45,6 +57,9 @@ exports.down = function(knex, Promise) {
           })
           .then(function(){
             return knex.schema.dropTableIfExists("album_images");
+          })
+          .then(function(){
+            return knex.schema.dropTableIfExists("artist_images");
           })
 
 };
