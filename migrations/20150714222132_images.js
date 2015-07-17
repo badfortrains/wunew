@@ -7,6 +7,8 @@ exports.up = function(knex, Promise) {
           t.increments('id').primary();
           t.string('artist', 100).unique().index();
           t.string('mbid',100).unique().index();
+          t.boolean("last_fm").defaultTo(false)
+          t.boolean("music_brainz").defaultTo(false)
         });
       }
     }),

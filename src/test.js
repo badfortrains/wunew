@@ -4,6 +4,11 @@ var db = require("./db");
 
 var fs = require("fs")
 
+fm.getImages(999999)
+.then(mb.searchMissing)
+.then(fm.getArtistImages)
+.then( () => console.log("done getting images"))
+
 //mb.searchMissing();
 
 //fm.getImages(99999);
@@ -37,27 +42,27 @@ var fs = require("fs")
 // group by tracks.artist;
 
 
-db.select("tracks.artist","t.url")
-.from('tracks')
-.leftJoin(function(){
-  this.select('url','artist')
-  .from('artist_images')
-  .join('artist_map',{'artist_images.artist_id':'artist_map.id'})
-  .where({'size':'small'})
-  .as('t');
-},{'t.artist':'tracks.artist'})
-.groupBy('tracks.artist')
-.then(function(data){
-  var html = "<html><body><ul>"
-
-  data.forEach( (artist) => {
-    html += "<li><img src='"+artist.url+"'></img>"+artist.artist + " </li>";
-  })
-
-  html += "</ul></body></html>"
-
-
-  fs.writeFile("test.html",html,function(){
-    console.log('done')
-  })
-})
+// db.select("tracks.artist","t.url")
+// .from('tracks')
+// .leftJoin(function(){
+//   this.select('url','artist')
+//   .from('artist_images')
+//   .join('artist_map',{'artist_images.artist_id':'artist_map.id'})
+//   .where({'size':'small'})
+//   .as('t');
+// },{'t.artist':'tracks.artist'})
+// .groupBy('tracks.artist')
+// .then(function(data){
+//   var html = "<html><body><ul>"
+//
+//   data.forEach( (artist) => {
+//     html += "<li><img src='"+artist.url+"'></img>"+artist.artist + " </li>";
+//   })
+//
+//   html += "</ul></body></html>"
+//
+//
+//   fs.writeFile("test.html",html,function(){
+//     console.log('done')
+//   })
+// })

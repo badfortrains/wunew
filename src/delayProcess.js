@@ -6,22 +6,25 @@ var processQueue = function(items,func,delay,max,done){
       lastSearch = Date.now(),
       timer;
 
-  function queueItem(){
-    if(active < max && lastSearch + delay < Date.now() && index < items.length){
-      func(items[index]).finally( () => active-- )
-      index++;
-      active++;
-      lastSearch = Date.now();
+  return new Promise( (resolve,reject) => {
+
+    function queueItem(){
+      if(active < max && lastSearch + delay < Date.now() && index < items.length){
+        func(items[index]).finally( () => active-- )
+        index++;
+        active++;
+        lastSearch = Date.now();
+      }
+
+      if(active == 0 && index >= items.length){
+        clearInterval(timer);
+        resolve();
+      }
     }
 
-    if(active == 0 && index >= items.length){
-      clearInterval(timer);
-      done && done();
-      console.log("donezo")
-    }
-  }
+    timer = setInterval(queueItem,delay)
 
-  timer = setInterval(queueItem,delay)
+  })
 }
 
 module.exports = processQueue;

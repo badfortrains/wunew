@@ -69,9 +69,7 @@ var fmSearch = function(items,delay,max){
     score100: 0
   }
 
-  var i = 0;
   var search = function(item){
-    console.log(i++)
     return fmInfo("album",{
       artist: fixName(item.artist),
       album: fixName(item.album),
@@ -91,20 +89,20 @@ var fmSearch = function(items,delay,max){
     })
   }
 
-  delayProcess(items,search,delay,max,function(){
-    console.log(stats)
-  })
+  return delayProcess(items,search,delay,max)
 }
 
 var getImages = function(limit){
-  db.select("tracks.artist","tracks.album",'fmid')
+  return db.select("tracks.artist","tracks.album",'fmid','album_map.last_fm')
   .groupBy("tracks.album")
   .from("tracks")
   .leftJoin('album_map',{'tracks.artist':'album_map.artist','tracks.album':'album_map.album'})
   .whereNull("fmid")
   .limit(limit)
-  .then(function(data){
-    fmSearch(data,20,20);
+  .then( (data) => data.filter( (d) => d.last_fm != true) )
+  .then( (data) => {
+    console.log("get %d fm albums",data.length)
+    return fmSearch(data,20,20)
   })
 }
 
@@ -117,10 +115,14 @@ var getArtistImages = function(){
     })
   }
 
-  db.select("mbid","id").from("artist_map")
+  return db.select("mbid","id").from("artist_map")
   .whereNotNull("mbid")
+  .andWhere({'last_fm':false})
   .then( (data) => {
-    delayProcess(data,getImage,20,20);
+    console.log("get %d artist images",data.length);
+    return delayProcess(data,getImage,20,20)
+  }).then( () => {
+    return db("artist_map").update({'last_fm': true}).whereNotNull("mbid")
   })
 }
 

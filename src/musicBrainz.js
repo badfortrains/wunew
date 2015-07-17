@@ -11,13 +11,18 @@ var mbSearch = Promise.promisify(nb.search,nb);
 var insert = function(rg,item){
   var artistMbid = rg['artist-credit'][0].artist.id
 
-  console.log("%s - %s : %s mbtitle: %s",item.artist,item.album,rg.score,rg.title);
-  console.log("%s ==?== %s",item.artist,rg['artist-credit'][0].artist.name)
+  // console.log("%s - %s : %s mbtitle: %s",item.artist,item.album,rg.score,rg.title);
+  // console.log("%s ==?== %s",item.artist,rg['artist-credit'][0].artist.name)
 
   return db("artist_map").insert({
     artist: item.artist,
     mbid: artistMbid,
-  }).catch( (e) => console.log(e) )
+  }).catch( (e) => {
+    //ignore unique constraint errors
+    if(e.errno != 19){
+      console.log(e);
+    }
+  })
 }
 
 var searchAll = function(items){
@@ -31,7 +36,7 @@ var searchAll = function(items){
       artist: item.artist.replace(", The",""),
       releasegroup: item.album.replace(", The","")
     }).then( (res) => {
-      console.log(i++,items.length)
+      //console.log(i++,items.length)
       return db("album_map").where({
         artist: item.artist,
         album: item.album,
@@ -45,19 +50,18 @@ var searchAll = function(items){
     }).catch( (err) =>  console.log(err) )
   }
 
-  delayProcess(items,search,1000,2,function(){
-    console.log(stats)
-  })
+  return delayProcess(items,search,1000,2);
 }
 
 var searchMissing = function(){
   //get all album/artist where artist doesn't have a mbid mapping
-  db.select("album_map.artist","album_map.album")
+  return db.select("album_map.artist","album_map.album")
   .from("album_map").leftJoin("artist_map",{'album_map.artist':'artist_map.artist'})
   .whereNull('artist_map.mbid')
-  .andWhere({'music_brainz':false})
+  .andWhere({'album_map.music_brainz':false})
   .then( (data) => {
-    searchAll(data);
+    console.log("get %d music brainz albums",data.length)
+    return searchAll(data)
   })
 }
 
