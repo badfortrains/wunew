@@ -2,6 +2,9 @@ var NB = require('nodebrainz');
 var Promise = require("bluebird");
 var delayProcess = require("./delayProcess")
 var db = require("./db")
+var logger = require("./logger").child({
+  scope: 'images.mb'
+})
 
 // Initialize NodeBrainz
 var nb = new NB({userAgent:'my-awesome-app/0.0.1 ( http://my-awesome-app.com )'});
@@ -11,8 +14,7 @@ var mbSearch = Promise.promisify(nb.search,nb);
 var insert = function(rg,item){
   var artistMbid = rg['artist-credit'][0].artist.id
 
-  // console.log("%s - %s : %s mbtitle: %s",item.artist,item.album,rg.score,rg.title);
-  // console.log("%s ==?== %s",item.artist,rg['artist-credit'][0].artist.name)
+  logger.trace({action: 'insert artist_map',item: item, rg: rg})
 
   return db("artist_map").insert({
     artist: item.artist,
@@ -20,34 +22,27 @@ var insert = function(rg,item){
   }).catch( (e) => {
     //ignore unique constraint errors
     if(e.errno != 19){
-      console.log(e);
+      logger.warn({action: 'insert artsit_map',error: e})
     }
   })
 }
 
 var searchAll = function(items){
-  var stats = {
-    score100: 0
-  }
-  var i =0;
-
   var search = function(item){
     return mbSearch("release-group",{
       artist: item.artist.replace(", The",""),
       releasegroup: item.album.replace(", The","")
     }).then( (res) => {
-      //console.log(i++,items.length)
       return db("album_map").where({
         artist: item.artist,
         album: item.album,
       }).update({"music_brainz": true})
       .then( () => {
         if(res && res["release-groups"] && res["release-groups"][0]){
-          stats.score100++;
           insert(res["release-groups"][0],item)
         }
       })
-    }).catch( (err) =>  console.log(err) )
+    }).catch( (err) =>  logger.warn({action:'search', error: err, item: item}) )
   }
 
   return delayProcess(items,search,1000,2);
@@ -60,7 +55,7 @@ var searchMissing = function(){
   .whereNull('artist_map.mbid')
   .andWhere({'album_map.music_brainz':false})
   .then( (data) => {
-    console.log("get %d music brainz albums",data.length)
+    logger.info({action:'searchMissing',length: data.length})
     return searchAll(data)
   })
 }

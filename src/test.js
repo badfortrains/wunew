@@ -3,11 +3,14 @@ var mb = require("./musicBrainz");
 var db = require("./db");
 
 var fs = require("fs")
+var logger = require("./logger").child({
+  scope: 'images.test'
+})
 
 fm.getImages(999999)
 .then(mb.searchMissing)
 .then(fm.getArtistImages)
-.then( () => console.log("done getting images"))
+.then( () => logger.info("done getting images"))
 
 //mb.searchMissing();
 

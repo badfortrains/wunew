@@ -4,6 +4,9 @@ var config = require("./config")
 var delayProcess = require("./delayProcess")
 var lastfm = new LastFmNode(config.lastfm);
 var db = require("./db")
+var logger = require("./logger").child({
+  scope: 'images.lastfm'
+})
 
 var fmInfo = function(type,options){
   options = options || {};
@@ -12,18 +15,22 @@ var fmInfo = function(type,options){
       success: (data) => resolve(data),
       error: (err) => reject(err)
     }
+    logger.trace({action: 'fmInfo',options:options, type: type})
     lastfm.request(type+".getInfo",options);
   })
 }
 
 var insertImages = function(foreignKey,item,type){
   Promise.all( item.image.filter( (i) => i["#text"] != '').map( (i) => {
-    return db(`${type}_images`).insert({
+    var fields = {
       size: i.size,
       url: i["#text"],
       mbid: item.mbid,
       [`${type}_id`]: foreignKey,
-    })
+    }
+
+    logger.trace({action: 'insertImage',options: fields, type:type})
+    return db(`${type}_images`).insert(fields)
   }))
 }
 
@@ -41,6 +48,7 @@ var insertFm = function(album,item){
     //May not have tracks so could throw
     var artistMbid = album.tracks.track.filter( (t) => t.artist.mbid)[0].artist.mbid;
     if(artistMbid){
+      logger.trace({action:"inser artist map",options: item});
       db("artist_map").insert({
         artist: item.artist,
         mbid: artistMbid,
@@ -48,6 +56,7 @@ var insertFm = function(album,item){
           //ignore unique constraint errors
           if(e.errno != 19){
             console.log(e);
+            logger.warn({action: 'insertfm',error: e})
           }
       })
     }
@@ -55,6 +64,7 @@ var insertFm = function(album,item){
     //ignore
   }
 
+  logger.trace({action:"inser album map",options: item});
   return db("album_map").insert({
     album: item.album,
     artist: item.artist,
@@ -84,7 +94,7 @@ var fmSearch = function(items,delay,max){
       if(err.error == 6){
         insertFm({image:[]},item);
       }else{
-        console.log("got err",err)
+        logger.warn({action: "fmSeach",option: item})
       }
     })
   }
@@ -101,7 +111,7 @@ var getImages = function(limit){
   .limit(limit)
   .then( (data) => data.filter( (d) => d.last_fm != true) )
   .then( (data) => {
-    console.log("get %d fm albums",data.length)
+    logger.info({action:"get album images",length: data.length})
     return fmSearch(data,20,20)
   })
 }
@@ -119,7 +129,7 @@ var getArtistImages = function(){
   .whereNotNull("mbid")
   .andWhere({'last_fm':false})
   .then( (data) => {
-    console.log("get %d artist images",data.length);
+    logger.info({action:"get artist images",length: data.length})
     return delayProcess(data,getImage,20,20)
   }).then( () => {
     return db("artist_map").update({'last_fm': true}).whereNotNull("mbid")
