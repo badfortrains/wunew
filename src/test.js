@@ -7,10 +7,40 @@ var logger = require("./logger").child({
   scope: 'images.test'
 })
 
-fm.getImages(999999)
-.then(mb.searchMissing)
-.then(fm.getArtistImages)
-.then( () => logger.info("done getting images"))
+import { TrackSchema } from './schema.js';
+import { graphql } from 'graphql';
+
+var query = `
+  query HeroNameQuery {
+    artists(name:"Future Islands") {
+      artist
+      image{
+        url
+      }
+      albums {
+        album
+        tracks {
+          title
+        }
+        image(size: "large"){
+          url
+        }
+      }
+    }
+  }
+`;
+
+graphql(TrackSchema, query)
+.then( (data) => {
+  console.log(data.data);
+}).catch( (e) => {
+  console.log(e);
+})
+
+// fm.getImages(999999)
+// .then(mb.searchMissing)
+// .then(fm.getArtistImages)
+// .then( () => logger.info("done getting images"))
 
 //mb.searchMissing();
 
