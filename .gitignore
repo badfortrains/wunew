@@ -4,3 +4,5 @@ dev.sqlite3
 lib/
 src/config.js
 test.html
+app/bower_components
+
