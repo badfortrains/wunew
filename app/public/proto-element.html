@@ -5,6 +5,7 @@
 <link rel="import" href="bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="bower_components/iron-image/iron-image.html">
+<link rel="import" href="jumper.html">
 
 <dom-module id="proto-element">
 
@@ -15,10 +16,16 @@
       display: block;
       font-family: sans-serif;
     }
+
     .toolbar {
       background: #E91E63;
       box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
       color: white;
+    }
+
+    .listHolder{
+      @apply(--layout-flex);
+      @apply(--layout-horizontal);
     }
     #list {
       @apply(--layout-flex);
@@ -34,7 +41,6 @@
       box-sizing: border-box;
       border: 1px solid #DDD;
       background-color: #DDD;
-      background-size: cover;
     }
     .pad {
       padding: 0 16px;
@@ -47,6 +53,9 @@
     }
     .secondary {
       font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .dim {
       color: gray;
@@ -75,39 +84,38 @@
         last-response="{{data}}"
         content-type="application/json"></iron-ajax>
 
-    <iron-list items="[[data.data.artists]]" as="item" id="list">
-      <template>
-        <div>
-          <div class="item">
-            <template is="dom-if" if="{{item.image}}">
-              <img sizing="cover" preload class="avatar" src="[[item.image.url]]"></img>
-            </template>
-            <template is="dom-if" if="{{!item.image}}">
-              <div class="avatar"></div>
-            </template>
-            <div class="pad">
-              <div class="primary">
-                <span>[[item.artist]]</span>
-              </div>
-              <div class="secondary">
-                <template is="dom-repeat" items="[[item.albums]]">
-                    <span>{{item.album}}</span>
-                </template>
+    <div class="listHolder">
+      <iron-list items="[[data.data.artists]]" as="item" id="list">
+        <template>
+          <div>
+            <div class="item">
+              <iron-image  preload sizing="cover" class="avatar" src="[[item.image.url]]" prevent-load="{{!item.image}}"></iron-image>
+              <div class="pad">
+                <div class="primary">
+                  <span>[[item.artist]]</span>
+                </div>
+                <div class="secondary">
+                  <template is="dom-repeat" items="[[item.albums]]">
+                      <span>{{item.album}}</span>
+                  </template>
+                </div>
               </div>
             </div>
+            <div class="border"></div>
           </div>
-          <div class="border"></div>
-        </div>
-      </template>
-    </iron-list>
+        </template>
+      </iron-list>
+      <wu-jumper list="{{list}}" list-items="[[data.data.artists]]"></wu-jumper>
+    </div>
   </template>
 
   <script>
     // element registration
     Polymer({
       is: "proto-element",
-
-      // add properties and methods on the element's prototype
+      observers: [
+        '_itemsChanged(items.*)'
+      ],
 
       ready: function(){
         this.query = JSON.stringify({
@@ -130,8 +138,8 @@
               }
             }
           `
-        })
-        // declare properties for the element's public API
+        });
+        this.list = this.$$("iron-list")
       }
     });
   </script>

@@ -1,0 +1,74 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/iron-list/iron-list.html">
+<link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="bower_components/iron-image/iron-image.html">
+
+<dom-module id="wu-jumper">
+
+  <style>
+    :host{
+      @apply(--layout-flex-none);
+      @apply(--layout-vertical);
+      width: 40px;
+      display: block;
+
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+    }
+
+    .jumpItem{
+      text-align: center;
+      cursor: pointer;
+      @apply(--layout-flex);
+    }
+  </style>
+
+  <template>
+    <template is="dom-repeat" items="{{getKeys(listItems)}}">
+        <div on-track="clickItem" on-tap="clickItem" class="jumpItem">{{item}}</div>
+    </template>
+  </template>
+
+  <script>
+    // element registration
+    Polymer({
+      is: "wu-jumper",
+      properties: {
+        listItems: Array,
+        list: Object,
+        currentKey: {
+          type: String,
+          observer: "_updateKey"
+        }
+      },
+      ready: function(){
+        console.log("ready")
+      },
+      getKeys: function(){
+        results = [];
+        for(var i=65; i<91; i++){
+          results.push(String.fromCharCode(i));
+        }
+        return results;
+      },
+      _updateKey: function(){
+        var letter = this.currentKey;
+        for(var i=0;i<this.listItems.length;i++){
+          if(this.listItems[i].artist.toLowerCase()[0] == letter){
+            this.list.scrollToIndex(i);
+            return;
+          }
+        }
+      },
+      clickItem: function(e){
+        var el = e.detail.hover ? e.detail.hover() : e.currentTarget;
+        this.currentKey = el.innerHTML.toLowerCase();
+      }
+    });
+  </script>
+
+</dom-module>
