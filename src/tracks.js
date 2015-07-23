@@ -127,7 +127,6 @@ function getArtists(root,exeContext,parentType,sourceValue,fieldASTs) {
   .orderBy("tracks.artist")
   .orderBy("tracks.album")
   .orderBy("tracks.track_number")
-  .limit(200)
   .then( (data) => {
     var results = [];
     var currentAlbum = {};
